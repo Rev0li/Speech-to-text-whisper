@@ -1,4 +1,3 @@
-#!/home/rev0li/dev/whisper-type/.venv/bin/python3
 """Lecture et initialisation de ~/.config/whisper-type/config.toml."""
 
 import tomllib

@@ -1,4 +1,4 @@
-#!/home/rev0li/dev/whisper-type/.venv/bin/python3
+#!/usr/bin/env python3
 """
 whisper-type — enregistre le micro, transcrit avec Whisper, tape le texte dans l'input actif.
 
@@ -16,7 +16,6 @@ import logging
 import tempfile
 from pathlib import Path
 
-import json
 import config as cfg
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

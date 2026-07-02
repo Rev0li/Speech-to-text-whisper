@@ -23,9 +23,6 @@ python3 -m venv "$DIR/.venv"
 "$DIR/.venv/bin/pip" install --upgrade pip
 "$DIR/.venv/bin/pip" install -r "$DIR/requirements.txt"
 
-# Met à jour le shebang du daemon pour utiliser le venv
-sed -i "1s|.*|#!$DIR/.venv/bin/python3|" "$DIR/whisper_type.py"
-
 # 3. Rend les scripts exécutables
 echo ""
 echo "[3/4] Permissions..."
@@ -67,7 +64,7 @@ echo ""
 echo "=== Installation terminée ==="
 echo ""
 echo "Raccourci : SUPER + F9  (change dans hyprland.conf si tu veux autre chose)"
-echo "Modèle    : small (fr) — lance './start.sh base' pour un modèle plus rapide"
+echo "Modèle    : small (fr) — modifie ~/.config/whisper-type/config.toml pour changer"
 echo ""
 echo "Démarre maintenant avec :"
 echo "  $DIR/start.sh"

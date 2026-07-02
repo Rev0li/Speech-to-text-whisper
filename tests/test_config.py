@@ -40,14 +40,12 @@ class TestConfigAbsent:
             data = tomllib.load(f)
         assert "model" in data
         assert "language" in data
-        assert "hotkey" in data
 
     def test_defaults_returned_when_file_absent(self, tmp_config):
         config, _, _ = tmp_config
         result = config.load()
         assert result["model"] == "small"
         assert result["language"] == "fr"
-        assert result["hotkey"] == "SUPER+grave"
 
     def test_creates_parent_dir(self, tmp_config):
         config, cfg_dir, _ = tmp_config
@@ -62,11 +60,10 @@ class TestConfigPartiel:
     def test_missing_language_falls_back_to_default(self, tmp_config):
         config, cfg_dir, cfg_path = tmp_config
         cfg_dir.mkdir(parents=True)
-        cfg_path.write_text('model = "tiny"\nhotkey = "CTRL+SPACE"\n', encoding="utf-8")
+        cfg_path.write_text('model = "tiny"\n', encoding="utf-8")
         result = config.load()
         assert result["language"] == "fr"      # défaut
         assert result["model"] == "tiny"       # lu depuis le fichier
-        assert result["hotkey"] == "CTRL+SPACE"  # lu depuis le fichier
 
     def test_missing_model_falls_back_to_default(self, tmp_config):
         config, cfg_dir, cfg_path = tmp_config
@@ -95,7 +92,7 @@ class TestLanguageAuto:
         assert result["language"] == "auto"
 
     def test_auto_converts_to_none_for_whisper(self, tmp_config):
-        """Reproduit la logique de whisper_type.py ligne 118."""
+        """Reproduit la conversion faite dans stop_and_transcribe() de whisper_type.py."""
         config, cfg_dir, cfg_path = tmp_config
         cfg_dir.mkdir(parents=True)
         cfg_path.write_text('language = "auto"\n', encoding="utf-8")

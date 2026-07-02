@@ -1,54 +1,23 @@
 # whisper-type
 
-Local speech-to-text that types directly into your active input. Press a hotkey, speak, release — the transcribed text appears where your cursor is.
+Local speech-to-text that types directly into your active input. Press a hotkey, speak, press again — the transcribed text appears where your cursor is.
 
-Runs 100% offline using [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No cloud, no subscription.
+Runs 100% offline using [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No cloud, no subscription, no GUI — just a small Python daemon.
 
 ---
 
-## Download
+## Status
 
-| Platform | Installer |
+| Platform | State |
 |---|---|
-| **Windows 10/11** | [Latest release](https://github.com/Rev0li/whisper-type/releases/latest) → `whisper-type_x.x.x_x64-setup.exe` |
-| **Linux (AppImage)** | [Latest release](https://github.com/Rev0li/whisper-type/releases/latest) → `whisper-type_x.x.x_amd64.AppImage` |
-
-No Python or Rust installation required — everything is bundled.
-The first launch downloads the Whisper model (~461 MB for `small`).
-
-**Linux note:** The AppImage requires a display server (X11 or XWayland). For global hotkeys on Wayland (Hyprland, Sway), XWayland must be running (`DISPLAY` env var set).
+| **Linux / Hyprland** | ✅ Stable — Python daemon, in daily use |
+| **Windows 10/11** | 🚧 Planned — lightweight port, see [Roadmap](#roadmap--windows-port) |
 
 ---
 
-## Current state — Linux / Hyprland (daemon mode)
+## Install (Linux / Hyprland)
 
-### Requirements
-
-- Fedora / Linux
-- Hyprland (Wayland)
-- Python 3.10+
-- `wtype` (auto-installed)
-
-### Dev prerequisites (frontend / Tauri)
-
-To work on the Tauri frontend (`src-tauri/`):
-
-- [Rust](https://rustup.rs/) 1.70+ (`rustup` recommended)
-- Node.js 18+ + npm
-- Tauri v2 system deps: `webkit2gtk4.1-devel`, `openssl-devel`, `libappindicator-gtk3-devel` (Fedora)
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Install frontend deps
-npm install
-
-# Launch dev build (requires Wayland/X11 display)
-npm run dev
-```
-
-### Install
+Requirements: Fedora (adapt the `dnf` line for other distros), Hyprland, Python 3.11+.
 
 ```bash
 git clone https://github.com/Rev0li/whisper-type
@@ -57,58 +26,64 @@ cd whisper-type
 ```
 
 The install script:
-- Installs system deps (`portaudio`, `wtype`, `libnotify`)
-- Creates a Python venv and installs `faster-whisper` + `sounddevice`
-- Adds to `hyprland.conf`:
-  - `exec-once` → daemon auto-starts with Hyprland
-  - `bind = SUPER + \`` → toggle recording
+- installs system deps (`portaudio`, `wtype`, `libnotify`)
+- creates a Python venv and installs `faster-whisper` + `sounddevice`
+- adds to `hyprland.conf`:
+  - `exec-once` → the daemon auto-starts with Hyprland
+  - `bind = SUPER, F9` → toggle recording
 
-### Usage
+## Usage
 
 | Action | Result |
 |---|---|
-| **SUPER + `** (first press) | Start recording — notification appears |
-| **SUPER + `** (second press) | Stop → transcribe → text typed in active input |
+| **SUPER + F9** (first press) | Start recording — notification appears |
+| **SUPER + F9** (second press) | Stop → transcribe → text typed into the active input |
 
-The daemon starts automatically with Hyprland. The Whisper model loads in the background (~15s on first launch, instant after).
+The daemon starts automatically with Hyprland. The Whisper model loads in the background (~15 s on launch, then stays in memory). The very first launch downloads the model (~461 MB for `small`).
 
-### Models
+## Configuration
 
-```bash
-./start.sh tiny    # fastest, less accurate
-./start.sh base    # good balance
-./start.sh small   # default — best for French
-./start.sh medium  # most accurate, slower
+Everything lives in `~/.config/whisper-type/config.toml` (created with defaults on first run):
+
+```toml
+model = "small"     # tiny | base | small | medium
+language = "fr"     # "fr" | "en" | "auto"
 ```
 
----
-
-## Roadmap
-
-### v0.2 — Cross-platform CLI
-- [ ] Windows support (PowerShell / `pyautogui` for typing)
-- [ ] Configurable hotkey via config file (no need to edit hyprland.conf)
-- [ ] Auto language detection
-
-### v0.3 — Simple UI
-- [ ] Minimal system tray icon (status indicator)
-- [ ] Visual recording indicator
-- [ ] Settings panel: model size, language, hotkey
-
-### v1.0 — Full cross-platform app
-- [ ] Native desktop app (Windows + Linux)
-- [ ] Modern, minimal UI
-- [ ] One-click installer
-
----
+Restart the daemon after editing: `./stop.sh && ./start.sh`.
 
 ## How it works
 
 ```
-SUPER+`
-  └─→ toggle.sh sends SIGUSR1 to daemon
-        ├─ if idle   → start recording (sounddevice, 16kHz mono)
+SUPER+F9
+  └─→ toggle.sh sends SIGUSR1 to the daemon
+        ├─ if idle      → start recording (sounddevice, 16 kHz mono)
         └─ if recording → stop → transcribe (faster-whisper) → wtype text
 ```
 
-The model stays loaded in memory — only the first transcription after launch has a cold start.
+If `wtype` fails, the daemon falls back to `xdotool`, then `ydotool`, then copies the text to the clipboard.
+
+## Project layout
+
+| File | Role |
+|---|---|
+| `whisper_type.py` | The daemon: recording, transcription, typing, notifications |
+| `config.py` | Reads/creates `~/.config/whisper-type/config.toml` |
+| `install.sh` | One-shot install (system deps, venv, Hyprland config) |
+| `start.sh` / `stop.sh` | Daemon lifecycle |
+| `toggle.sh` | Sends SIGUSR1 to the daemon (bound to the hotkey) |
+| `tests/` | pytest — run with `.venv/bin/python -m pytest tests/ -q` |
+
+## Roadmap — Windows port
+
+Goal: the same minimal UX on Windows (hotkey → speak → text typed), shipped as a downloadable `.exe` for non-technical friends. No GUI framework — plain Python, packaged with PyInstaller. Work is ticketed in `docs/tickets/`:
+
+1. [TICKET-02](docs/tickets/TICKET-02.md) — extract the portable core (recording + transcription) from the Linux layer
+2. [TICKET-03](docs/tickets/TICKET-03.md) — Windows entry point (global hotkey, typing, toast notifications)
+3. [TICKET-04](docs/tickets/TICKET-04.md) — PyInstaller packaging + GitHub Actions release
+
+Note for future releases: unsigned executables trigger Windows SmartScreen ("Windows protected your PC") — users must click "More info → Run anyway".
+
+## History
+
+An earlier iteration wrapped this daemon in a Tauri desktop app (tray icon, settings UI, installers). It was dropped in favor of the plain daemon (`git log c262401`) — three stacks for a program with no UI wasn't worth it.

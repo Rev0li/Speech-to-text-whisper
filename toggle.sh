@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # toggle.sh — envoie SIGUSR1 au daemon pour démarrer/stopper l'enregistrement.
-# Ajouter dans hyprland.conf : bind = SUPER, SPACE, exec, /home/rev0li/dev/whisper-type/toggle.sh
+# Le bind Hyprland est ajouté par install.sh : bind = SUPER, F9, exec, <repo>/toggle.sh
 
 PID_FILE="/tmp/whisper-type.pid"
 
