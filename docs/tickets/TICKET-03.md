@@ -21,12 +21,12 @@ l'enregistrement, le texte transcrit est tapé dans l'input actif. Livrable :
 - Environnement de test : la VM Windows de l'utilisateur.
 
 ## 🔧 Décisions déjà prises (ne pas re-débattre)
-- **Hotkey global** : lib `keyboard` (`keyboard.add_hotkey`). Défaut **`f12`**
-  (une seule touche, choix de l'utilisateur), surchargeable via une nouvelle clé
-  `hotkey` dans config.toml (l'ajouter aux `DEFAULTS` de `config.py` + au TOML
-  généré ; l'entrée Linux l'ignore, le bind y étant géré par Hyprland).
-  Utiliser `suppress=True` pour que F12 n'atteigne pas l'application au premier
-  plan — sinon il ouvrirait les DevTools dans un navigateur à chaque toggle.
+- **Hotkey global** : lib `keyboard` (`keyboard.add_hotkey`). Défaut **`f9`**
+  (une seule touche, cohérent avec le bind Linux SUPER+F9), surchargeable via une
+  nouvelle clé `hotkey` dans config.toml (l'ajouter aux `DEFAULTS` de `config.py`
+  + au TOML généré ; l'entrée Linux l'ignore, le bind y étant géré par Hyprland).
+  Utiliser `suppress=True` pour que F9 n'atteigne pas l'application au premier
+  plan (F9 déclenche p. ex. le mode lecture dans Firefox, le recalcul dans Excel).
 - **Typing** : copie dans le presse-papier + simulation Ctrl+V — fiable pour les
   accents français et l'unicode, contrairement à la frappe touche par touche.
   Sauvegarder puis restaurer le presse-papier précédent. Fallback si le collage
@@ -41,7 +41,7 @@ l'enregistrement, le texte transcrit est tapé dans l'input actif. Livrable :
 ## ✅ Definition of Done
 - [ ] `whisper_type_win.py` + `requirements-win.txt`
 - [ ] Testé sur la VM Windows : dictée dans Notepad ET dans un champ de navigateur, avec accents français
-- [ ] F12 dans un navigateur toggle l'enregistrement SANS ouvrir les DevTools
+- [ ] F9 dans un navigateur toggle l'enregistrement SANS action parasite de l'app (ex. mode lecture Firefox)
 - [ ] Premier lancement (modèle absent) → téléchargement + toast « chargement », pas de crash
 - [ ] Hotkey pressé pendant le chargement du modèle → toast « réessayez », pas de crash
 - [ ] Tests Linux toujours verts (`.venv/bin/python -m pytest tests/ -q`) + tests unitaires de la clé `hotkey` dans config
