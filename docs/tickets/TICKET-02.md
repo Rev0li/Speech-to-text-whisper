@@ -1,7 +1,7 @@
 ---
 ticket: TICKET-02
 title: Extraire le cœur portable (core.py) de la couche Linux
-status: tested
+status: validated
 branch: feat/ticket-02
 updated: 2026-07-03
 ---
@@ -37,7 +37,7 @@ mais le cœur est importable par une future entrée Windows (TICKET-03).
 
 ## ✅ Definition of Done
 - [x] `core.py` sans aucune dépendance plateforme (vérifiable en lisant ses imports)
-- [ ] Daemon Linux inchangé à l'usage (test manuel : SUPER+F9, parler, texte tapé) — pipeline WAV→transcription vérifié avec vraie parole synthétique en rôle Test (voir section 🧪), mais pas via le vrai hotkey + micro physique + `wtype` dans un champ réel
+- [x] Daemon Linux inchangé à l'usage (test manuel : SUPER+F9, parler, texte tapé) — confirmé par l'utilisateur en conditions réelles (hotkey + micro physique + `wtype`) lors de la validation
 - [x] Tests passent : `.venv/bin/python -m pytest tests/ -q`
 - [x] Tests unitaires de `core.py` ajoutés (au moins : conversion `auto`→None, écriture WAV depuis des frames factices)
 - [x] Doc à jour (tableau « Project layout » du README + CLAUDE.md)
@@ -138,8 +138,17 @@ validation.
 **Risque :**
 **Tests verts avant ET après :**
 
-## 🚀 Validation — <date>
-**Lancé en dev :**
-**Lancé en prod :**
-**DoD complète :**
-**Statut final :**
+## 🚀 Validation — 2026-07-03
+**Lancé en dev :** `.venv/bin/python -m pytest tests/ -q` → 29 tests verts.
+
+**Lancé en prod :** Utilisateur confirme le test manuel réel (SUPER+F9, parole
+physique, texte tapé via `wtype`) — daemon inchangé à l'usage après le
+refactor `core.py`/`whisper_type.py`.
+
+**DoD complète :** Oui — les 5 cases sont cochées (dernière levée par la
+confirmation manuelle ci-dessus).
+
+**Statut final :** `validated`. Pas de refactor jugé nécessaire (audit 2/10,
+rôle Refactor sauté). Branche poussée vers `releases-windows` (intégration
+Windows en cours, tickets 03/04 à suivre) plutôt que mergée dans `main` — le
+cœur portable n'est utile qu'une fois une entrée Windows disponible.
