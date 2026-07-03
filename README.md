@@ -11,7 +11,20 @@ Runs 100% offline using [faster-whisper](https://github.com/SYSTRAN/faster-whisp
 | Platform | State |
 |---|---|
 | **Linux / Hyprland** | ✅ Stable — Python daemon, in daily use |
-| **Windows 10/11** | 🚧 In progress — dev entry point ready (see [Windows (dev)](#windows-dev)), no packaged installer yet |
+| **Windows 10/11** | 🚧 In progress — packaging automated (see [Download](#download-windows)), not yet validated end-to-end on a real machine |
+
+---
+
+## Download (Windows)
+
+Pre-built releases are published automatically by GitHub Actions on tagged commits (`v*`) — see [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml).
+
+1. Grab `whisper-type-windows.zip` from the [Releases page](https://github.com/Rev0li/whisper-type/releases).
+2. Extract it anywhere (e.g. `Documents\whisper-type`).
+3. Run `whisper-type.exe`. Windows will likely show **"Windows protected your PC"** (SmartScreen) — the app isn't code-signed (see [Roadmap](#roadmap--windows-port) for why). Click **More info → Run anyway**; this is a one-time warning per version.
+4. Press **F9** to start/stop recording, **Ctrl+Alt+Q** to quit — see [Windows (dev)](#windows-dev) for the full hotkey table and configuration.
+
+The first launch downloads the Whisper model (~461 MB for `small`) — the "loading" toast covers that wait.
 
 ---
 
@@ -102,6 +115,7 @@ Notes:
 | `start.sh` / `stop.sh` | Daemon lifecycle (Linux) |
 | `toggle.sh` | Sends SIGUSR1 to the daemon (Linux, bound to the hotkey) |
 | `requirements.txt` / `requirements-win.txt` | Linux deps / Windows deps |
+| `.github/workflows/release-windows.yml` | Builds `whisper-type.exe` with PyInstaller and publishes it to GitHub Releases on tag `v*` |
 | `tests/` | pytest — run with `.venv/bin/python -m pytest tests/ -q` |
 
 ## Roadmap — Windows port
@@ -112,7 +126,7 @@ Goal: the same minimal UX on Windows (hotkey → speak → text typed), shipped 
 2. [TICKET-03](docs/tickets/TICKET-03.md) — Windows entry point (global hotkey, typing, toast notifications)
 3. [TICKET-04](docs/tickets/TICKET-04.md) — PyInstaller packaging + GitHub Actions release
 
-Note for future releases: unsigned executables trigger Windows SmartScreen ("Windows protected your PC") — users must click "More info → Run anyway".
+Releases aren't code-signed (signing costs money) — unsigned executables trigger Windows SmartScreen ("Windows protected your PC"), see [Download](#download-windows) for the workaround.
 
 ## History
 
