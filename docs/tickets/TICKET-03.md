@@ -1,7 +1,7 @@
 ---
 ticket: TICKET-03
 title: Entrée Windows — hotkey global, typing, notifications
-status: coded
+status: tested
 branch: feat/ticket-03
 updated: 2026-07-03
 ---
@@ -40,10 +40,10 @@ l'enregistrement, le texte transcrit est tapé dans l'input actif. Livrable :
 
 ## ✅ Definition of Done
 - [x] `whisper_type_win.py` + `requirements-win.txt`
-- [ ] Testé sur la VM Windows : dictée dans Notepad ET dans un champ de navigateur, avec accents français
-- [ ] F9 dans un navigateur toggle l'enregistrement SANS action parasite de l'app (ex. mode lecture Firefox)
-- [ ] Premier lancement (modèle absent) → téléchargement + toast « chargement », pas de crash
-- [ ] Hotkey pressé pendant le chargement du modèle → toast « réessayez », pas de crash
+- [ ] Testé sur la VM Windows : dictée dans Notepad ET dans un champ de navigateur, avec accents français — **à faire par l'utilisateur sur sa VM**, aucun accès VM/GUI Windows depuis ce terminal
+- [ ] F9 dans un navigateur toggle l'enregistrement SANS action parasite de l'app (ex. mode lecture Firefox) — idem, à faire sur la VM
+- [ ] Premier lancement (modèle absent) → téléchargement + toast « chargement », pas de crash — logique `notify()`/`load_model()` validée unitairement (mock, voir 🧪 Test) ; téléchargement réel + rendu du toast à vérifier sur la VM
+- [ ] Hotkey pressé pendant le chargement du modèle → toast « réessayez », pas de crash — logique `stop_and_transcribe()` (modèle non chargé) validée unitairement ; rendu réel à vérifier sur la VM
 - [x] Tests Linux toujours verts (`.venv/bin/python -m pytest tests/ -q`) + tests unitaires de la clé `hotkey` dans config
 - [x] Doc à jour (README : section dev Windows)
 
@@ -124,12 +124,74 @@ l'enregistrement, le texte transcrit est tapé dans l'input actif. Livrable :
   Windows pour le hook global — documenté en note README mais pas vérifié
   faute de VM disponible dans cette session.
 
-## 🧪 Test — <date>
+## 🧪 Test — 2026-07-03
 **Couvert :**
+- `keyboard`, `pyperclip`, `winotify` ne sont pas installés dans le venv Linux
+  (`winotify` est Windows-only) : plutôt que de se limiter à `ast.parse`, ces
+  trois libs ont été doublées dans `sys.modules` (`tests/test_whisper_type_win.py`)
+  pour importer réellement `whisper_type_win.py` et exercer sa logique
+  d'orchestration. 14 nouveaux tests, suite complète **46 tests verts**
+  (`.venv/bin/python -m pytest tests/ -q`).
+- `notify()` : appel correct de `Notification(app_id=..., title=..., msg=...)`,
+  exception de `.show()` avalée sans lever (pas de crash si le service toast
+  Windows est indisponible).
+- `type_text()` : collage via `pyperclip.copy()` + `keyboard.send("ctrl+v")`,
+  sauvegarde/restauration du presse-papier précédent, fallback
+  `keyboard.write()` si le collage échoue, pas de restauration tentée si la
+  lecture du presse-papier précédent a elle-même échoué.
+- `load_model()` : notifie « chargement » puis « prêt » en cas de succès ;
+  en cas d'exception de `transcriber.load()`, notifie « échec » et ne
+  propage pas (couvre exactement la DoD « premier lancement, pas de crash »
+  au niveau logique).
+- `toggle()` : dispatch correct vers `start_recording`/`stop_and_transcribe`
+  selon `recorder.is_recording`.
+- `stop_and_transcribe()` : no-op si `recorder.stop()` retourne `None`,
+  notifie « modèle en cours de chargement » et nettoie le WAV sans transcrire
+  si `transcriber.is_loaded` est faux, appelle `type_text()` seulement si le
+  texte n'est pas vide, et le WAV est bien supprimé (`os.unlink`) même si
+  `transcriber.transcribe()` lève une exception.
+- Suite `tests/test_config.py` (clé `hotkey`, déjà ajoutée par le rôle Code) :
+  toujours verte, relue et jugée correcte (défaut, fallback, override).
+
 **NON couvert (assumé) :**
+- Tout ce qui nécessite la VM Windows réelle : dictée effective dans Notepad/
+  navigateur avec accents, rendu visuel des toasts, F9 sans action parasite
+  dans une appli tierce, téléchargement réel d'un modèle absent, droits admin
+  nécessaires ou non pour le hook global `keyboard`. Ce terminal n'a pas
+  d'accès à un environnement graphique Windows — c'est explicitement le rôle
+  de l'utilisateur sur sa VM (voir DoD, cases laissées décochées avec note).
+- Pas de test de la valeur réelle du délai `time.sleep(0.3)` avant restauration
+  du presse-papier (patché à no-op dans les tests) — signalé par le rôle Code
+  comme à ajuster en usage réel, toujours vrai.
+
 **Sécurité vérifiée :**
+- Pas d'auth ni de secrets. `keyboard.send`/`keyboard.write`/`pyperclip.copy`
+  reçoivent le texte transcrit tel quel, jamais interprété par un shell
+  (pas de `subprocess`/`os.system` dans ce fichier) — pas de surface
+  d'injection. Le presse-papier précédent n'est gardé qu'en mémoire locale
+  (variable `previous_clipboard`), jamais loggé ni persisté.
+
 **Bugs trouvés :**
-**Audit refactor : X/10** — <arguments>
+- **Non bloquant mais réel** : `main()` appelle
+  `keyboard.add_hotkey(HOTKEY, toggle, suppress=True)` sans aucun
+  `try/except`. Vérifié en installant `keyboard` dans un venv jetable et en
+  lisant sa source : un nom de touche non reconnu fait lever
+  `ValueError` par `key_to_scan_codes()` (appelée par `parse_hotkey`/
+  `add_hotkey`). Si la clé `hotkey` du config.toml contient une valeur
+  invalide (typo utilisateur), le process plante **au démarrage**, et comme
+  il est lancé via `pythonw` (sans console), l'utilisateur ne voit strictement
+  rien — contrairement à `load_model()` qui a explicitement été protégé pour
+  cette même raison (voir décisions du rôle Code). Recouvrable en éditant le
+  config, donc pas bloquant pour la validation, mais incohérent avec le soin
+  apporté ailleurs dans ce ticket.
+
+**Audit refactor : 5/10** — le découpage et la logique sont propres (validés
+par les 14 tests ci-dessus), mais je recommande d'entourer l'appel à
+`keyboard.add_hotkey()` dans `main()` d'un `try/except` qui notifie l'échec
+et sort proprement, sur le même principe que `load_model()`. Risque concret
+si non traité : un daemon Windows qui semble "ne rien faire" au lancement
+sans aucun log visible (pythonw), pour un utilisateur qui aurait mal
+recopié la syntaxe d'un hotkey personnalisé dans le TOML.
 
 ## ♻️ Refactor — <date>
 **Changé :**
