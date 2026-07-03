@@ -1,7 +1,7 @@
 ---
 ticket: TICKET-02
 title: Extraire le cœur portable (core.py) de la couche Linux
-status: coded
+status: tested
 branch: feat/ticket-02
 updated: 2026-07-03
 ---
@@ -37,7 +37,7 @@ mais le cœur est importable par une future entrée Windows (TICKET-03).
 
 ## ✅ Definition of Done
 - [x] `core.py` sans aucune dépendance plateforme (vérifiable en lisant ses imports)
-- [ ] Daemon Linux inchangé à l'usage (test manuel : SUPER+F9, parler, texte tapé) — partiellement vérifié (voir « Reste » ci-dessus, pas de vraie phrase parlée testée)
+- [ ] Daemon Linux inchangé à l'usage (test manuel : SUPER+F9, parler, texte tapé) — pipeline WAV→transcription vérifié avec vraie parole synthétique en rôle Test (voir section 🧪), mais pas via le vrai hotkey + micro physique + `wtype` dans un champ réel
 - [x] Tests passent : `.venv/bin/python -m pytest tests/ -q`
 - [x] Tests unitaires de `core.py` ajoutés (au moins : conversion `auto`→None, écriture WAV depuis des frames factices)
 - [x] Doc à jour (tableau « Project layout » du README + CLAUDE.md)
@@ -93,12 +93,44 @@ mais le cœur est importable par une future entrée Windows (TICKET-03).
   (nécessiterait du matériel micro en CI) — seuls `stop()`/`abort()` sont
   testés avec des frames factices injectées directement.
 
-## 🧪 Test — <date>
+## 🧪 Test — 2026-07-03
 **Couvert :**
+- Suite complète : 29 tests verts (`.venv/bin/python -m pytest tests/ -q`), dont 6
+  nouveaux tests ajoutés côté `Recorder.start()` (succès avec `InputStream` mocké,
+  no-op si déjà en cours, échec micro → état reset, callback qui n'accumule les
+  frames que pendant l'enregistrement) et `Transcriber.load()` (instanciation
+  `cpu`/`int8`, idempotence si déjà chargé).
+- Vérification manuelle bout-en-bout avec vraie parole (le point resté ouvert
+  par le rôle Code) : WAV généré via `espeak-ng` (français, 22050 Hz) transcrit
+  avec le vrai `Transcriber` (modèle `tiny`) → texte non vide retourné. Le
+  contenu est imprécis (voix synthétique très robotique) mais le pipeline
+  WAV → VAD → beam search → jointure des segments tourne sans exception, ce
+  qui exerce réellement le chemin `text` non-vide qui mènerait à `type_text()`.
+- Relecture de `whisper_type.py` : orchestration identique au comportement
+  d'avant refactor, aucune régression repérée.
+
 **NON couvert (assumé) :**
+- Aucun test n'ouvre un vrai flux micro physique (nécessiterait du matériel en
+  CI) — accepté, l'appel à `sounddevice.InputStream` est désormais couvert par
+  mock côté `Recorder.start()`.
+- `whisper_type.py` (signaux, `type_text()` fallback chain, `notify()`) reste
+  sans tests unitaires — état pré-existant, pas une régression de ce ticket ;
+  hors périmètre de TICKET-02 qui porte sur `core.py`. À adresser dans un
+  ticket dédié si souhaité.
+- Pas de test de charge/latence de transcription — hors scope.
+
 **Sécurité vérifiée :**
-**Bugs trouvés :**
-**Audit refactor : X/10** — <arguments>
+- Pas d'auth ni de secrets dans ce module. `subprocess.run()` toujours appelé
+  avec des listes d'arguments (jamais `shell=True`) dans `whisper_type.py` →
+  le texte transcrit ne peut pas être interprété par un shell. Code déplacé
+  tel quel par ce ticket, rien de nouveau introduit sur ce plan.
+
+**Bugs trouvés :** aucun bug bloquant.
+
+**Audit refactor : 2/10** — découpage propre et à responsabilité unique
+(`Recorder`/`Transcriber`/`_resolve_language`), `core.py` sans dépendance
+plateforme comme demandé par le ticket. Rien qui justifie un refactor avant
+validation.
 
 ## ♻️ Refactor — <date>
 **Changé :**

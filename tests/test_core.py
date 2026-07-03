@@ -64,6 +64,67 @@ class TestRecorderStop:
                 os.unlink(wav_path)
 
 
+class TestRecorderStart:
+    def test_start_sets_recording_and_starts_stream(self, monkeypatch):
+        import sounddevice as sd
+
+        fake_stream = Mock()
+        fake_input_stream = Mock(return_value=fake_stream)
+        monkeypatch.setattr(sd, "InputStream", fake_input_stream)
+
+        rec = core.Recorder()
+        rec.start()
+
+        assert rec.is_recording is True
+        fake_input_stream.assert_called_once()
+        fake_stream.start.assert_called_once()
+
+    def test_start_is_noop_if_already_recording(self, monkeypatch):
+        import sounddevice as sd
+
+        fake_input_stream = Mock()
+        monkeypatch.setattr(sd, "InputStream", fake_input_stream)
+
+        rec = core.Recorder()
+        rec._recording = True
+        rec.start()
+
+        fake_input_stream.assert_not_called()
+
+    def test_start_resets_state_when_stream_fails(self, monkeypatch):
+        import sounddevice as sd
+
+        monkeypatch.setattr(sd, "InputStream", Mock(side_effect=OSError("pas de micro")))
+
+        rec = core.Recorder()
+        rec.start()
+
+        assert rec.is_recording is False
+
+    def test_callback_appends_frames_only_while_recording(self, monkeypatch):
+        import sounddevice as sd
+
+        captured = {}
+
+        def fake_input_stream(**kwargs):
+            captured["callback"] = kwargs["callback"]
+            return Mock()
+
+        monkeypatch.setattr(sd, "InputStream", Mock(side_effect=fake_input_stream))
+
+        rec = core.Recorder()
+        rec.start()
+        callback = captured["callback"]
+        frame = np.zeros((10, 1), dtype="int16")
+
+        callback(frame, 10, None, None)
+        assert len(rec._frames) == 1
+
+        rec._recording = False
+        callback(frame, 10, None, None)
+        assert len(rec._frames) == 1  # rien ajouté une fois l'enregistrement arrêté
+
+
 class TestRecorderAbort:
     def test_abort_resets_recording_without_writing_wav(self):
         rec = core.Recorder()
@@ -76,6 +137,33 @@ class TestRecorderAbort:
         rec = core.Recorder()
         rec.abort()
         assert rec.is_recording is False
+
+
+class TestTranscriberLoad:
+    def test_load_instantiates_model_cpu_int8(self, monkeypatch):
+        import faster_whisper
+
+        fake_model = Mock()
+        fake_whisper_model = Mock(return_value=fake_model)
+        monkeypatch.setattr(faster_whisper, "WhisperModel", fake_whisper_model)
+
+        t = core.Transcriber(model_size="small", language="fr")
+        t.load()
+
+        fake_whisper_model.assert_called_once_with("small", device="cpu", compute_type="int8")
+        assert t.is_loaded is True
+
+    def test_load_is_idempotent(self, monkeypatch):
+        import faster_whisper
+
+        fake_whisper_model = Mock(return_value=Mock())
+        monkeypatch.setattr(faster_whisper, "WhisperModel", fake_whisper_model)
+
+        t = core.Transcriber(model_size="small", language="fr")
+        t.load()
+        t.load()
+
+        fake_whisper_model.assert_called_once()
 
 
 class TestTranscriber:
