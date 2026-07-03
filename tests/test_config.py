@@ -40,12 +40,14 @@ class TestConfigAbsent:
             data = tomllib.load(f)
         assert "model" in data
         assert "language" in data
+        assert "hotkey" in data
 
     def test_defaults_returned_when_file_absent(self, tmp_config):
         config, _, _ = tmp_config
         result = config.load()
         assert result["model"] == "small"
         assert result["language"] == "fr"
+        assert result["hotkey"] == "f9"
 
     def test_creates_parent_dir(self, tmp_config):
         config, cfg_dir, _ = tmp_config
@@ -109,3 +111,26 @@ class TestLanguageAuto:
         LANGUAGE = result["language"]
         lang = None if LANGUAGE == "auto" else LANGUAGE
         assert lang == "fr"
+
+
+class TestHotkeyKey:
+    """hotkey — Windows uniquement (TICKET-03), ignorée côté Linux."""
+
+    def test_default_hotkey_is_f9(self, tmp_config):
+        config, _, _ = tmp_config
+        result = config.load()
+        assert result["hotkey"] == "f9"
+
+    def test_missing_hotkey_falls_back_to_default(self, tmp_config):
+        config, cfg_dir, cfg_path = tmp_config
+        cfg_dir.mkdir(parents=True)
+        cfg_path.write_text('model = "tiny"\n', encoding="utf-8")
+        result = config.load()
+        assert result["hotkey"] == "f9"
+
+    def test_custom_hotkey_overrides_default(self, tmp_config):
+        config, cfg_dir, cfg_path = tmp_config
+        cfg_dir.mkdir(parents=True)
+        cfg_path.write_text('hotkey = "f10"\n', encoding="utf-8")
+        result = config.load()
+        assert result["hotkey"] == "f10"

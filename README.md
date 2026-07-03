@@ -11,7 +11,7 @@ Runs 100% offline using [faster-whisper](https://github.com/SYSTRAN/faster-whisp
 | Platform | State |
 |---|---|
 | **Linux / Hyprland** | ✅ Stable — Python daemon, in daily use |
-| **Windows 10/11** | 🚧 Planned — lightweight port, see [Roadmap](#roadmap--windows-port) |
+| **Windows 10/11** | 🚧 In progress — dev entry point ready (see [Windows (dev)](#windows-dev)), no packaged installer yet |
 
 ---
 
@@ -48,9 +48,10 @@ Everything lives in `~/.config/whisper-type/config.toml` (created with defaults 
 ```toml
 model = "small"     # tiny | base | small | medium
 language = "fr"     # "fr" | "en" | "auto"
+hotkey = "f9"       # Windows only — Linux bind is managed by Hyprland
 ```
 
-Restart the daemon after editing: `./stop.sh && ./start.sh`.
+Restart the daemon after editing: `./stop.sh && ./start.sh` (Linux) or relaunch `whisper_type_win.py` (Windows).
 
 ## How it works
 
@@ -63,16 +64,44 @@ SUPER+F9
 
 If `wtype` fails, the daemon falls back to `xdotool`, then `ydotool`, then copies the text to the clipboard.
 
+## Windows (dev)
+
+No installer yet (see [TICKET-04](docs/tickets/TICKET-04.md)) — this is the developer path, run from source with Python 3.11+.
+
+```powershell
+git clone https://github.com/Rev0li/whisper-type
+cd whisper-type
+python -m venv .venv
+.venv\Scripts\pip install -r requirements-win.txt
+.venv\Scripts\pythonw whisper_type_win.py
+```
+
+| Action | Result |
+|---|---|
+| **F9** (first press) | Start recording — toast notification appears |
+| **F9** (second press) | Stop → transcribe → text pasted into the active input (Ctrl+V) |
+| **Ctrl+Alt+Q** | Quit the daemon |
+
+The hotkey is configurable via the `hotkey` key in `config.toml` (see [Configuration](#configuration)); Linux ignores this key since the bind is managed by Hyprland instead.
+
+Typing copies the transcribed text to the clipboard and simulates Ctrl+V — reliable for French accents and unicode, unlike key-by-key typing. The previous clipboard content is restored afterwards. If pasting fails, it falls back to typing the text key by key.
+
+Notes:
+- Global hotkey capture (`keyboard` module) may need the terminal/script run as Administrator, depending on the target application.
+- `F9` uses `suppress=True` so the keypress doesn't reach the foreground app (e.g. Firefox's reader mode, Excel's recalculation shortcut).
+
 ## Project layout
 
 | File | Role |
 |---|---|
 | `whisper_type.py` | Linux entry point: signals, notifications, typing, orchestrates `core.py` |
+| `whisper_type_win.py` | Windows entry point: global hotkey, toast notifications, clipboard typing, orchestrates `core.py` |
 | `core.py` | Portable core (no platform dependency): `Recorder` (mic capture → WAV), `Transcriber` (faster-whisper) |
 | `config.py` | Reads/creates `~/.config/whisper-type/config.toml` |
 | `install.sh` | One-shot install (system deps, venv, Hyprland config) |
-| `start.sh` / `stop.sh` | Daemon lifecycle |
-| `toggle.sh` | Sends SIGUSR1 to the daemon (bound to the hotkey) |
+| `start.sh` / `stop.sh` | Daemon lifecycle (Linux) |
+| `toggle.sh` | Sends SIGUSR1 to the daemon (Linux, bound to the hotkey) |
+| `requirements.txt` / `requirements-win.txt` | Linux deps / Windows deps |
 | `tests/` | pytest — run with `.venv/bin/python -m pytest tests/ -q` |
 
 ## Roadmap — Windows port
