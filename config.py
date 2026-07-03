@@ -9,11 +9,13 @@ CONFIG_PATH = CONFIG_DIR / "config.toml"
 DEFAULTS = {
     "model":    "small",
     "language": "fr",
+    "hotkey":   "f9",
 }
 
 _DEFAULT_TOML = """\
 # whisper-type — configuration
-# Modifiez ce fichier puis relancez le daemon (stop.sh && start.sh).
+# Modifiez ce fichier puis relancez le daemon (stop.sh && start.sh sous Linux,
+# ou relancez whisper_type_win.py sous Windows).
 
 # Modèle Whisper : tiny | base | small | medium
 # tiny   : ~1s  ultra rapide, moins précis
@@ -25,6 +27,10 @@ model = "small"
 # Langue : "fr" | "en" | "auto"
 # "auto" laisse Whisper détecter automatiquement
 language = "fr"
+
+# Raccourci global — Windows uniquement (sous Linux, le bind est géré par Hyprland).
+# Une seule touche, ex. "f9". Syntaxe des combos : voir la doc du module Python `keyboard`.
+hotkey = "f9"
 """
 
 

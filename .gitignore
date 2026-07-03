@@ -2,3 +2,8 @@
 __pycache__/
 *.log
 *.pyc
+
+# PyInstaller (TICKET-04)
+build/
+dist/
+*.spec
