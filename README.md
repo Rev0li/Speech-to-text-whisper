@@ -6,15 +6,6 @@ Runs 100% offline using [faster-whisper](https://github.com/SYSTRAN/faster-whisp
 
 ---
 
-## Status
-
-| Platform | State |
-|---|---|
-| **Linux / Hyprland** | ✅ Stable — Python daemon, in daily use |
-| **Windows 10/11** | 🚧 In progress — packaging automated (see [Download](#download-windows)), not yet validated end-to-end on a real machine |
-
----
-
 ## Download (Windows)
 
 Pre-built releases are published automatically by GitHub Actions on tagged commits (`v*`) — see [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml).
@@ -31,7 +22,16 @@ The first launch downloads the Whisper model (~461 MB for `small`) — the "load
 
 ---
 
-## Install (Linux / Hyprland)
+## For developers
+
+### Status
+
+| Platform | State |
+|---|---|
+| **Linux / Hyprland** | ✅ Stable — Python daemon, in daily use |
+| **Windows 10/11** | ✅ Packaged & validated — see [Download](#download-windows) |
+
+### Install (Linux / Hyprland)
 
 Requirements: Fedora (adapt the `dnf` line for other distros), Hyprland, Python 3.11+.
 
@@ -48,7 +48,7 @@ The install script:
   - `exec-once` → the daemon auto-starts with Hyprland
   - `bind = SUPER, F9` → toggle recording
 
-## Usage
+### Usage
 
 | Action | Result |
 |---|---|
@@ -57,7 +57,7 @@ The install script:
 
 The daemon starts automatically with Hyprland. The Whisper model loads in the background (~15 s on launch, then stays in memory). The very first launch downloads the model (~461 MB for `small`).
 
-## Configuration
+### Configuration
 
 Everything lives in `~/.config/whisper-type/config.toml` (created with defaults on first run):
 
@@ -69,7 +69,7 @@ hotkey = "f9"       # Windows only — Linux bind is managed by Hyprland
 
 Restart the daemon after editing: `./stop.sh && ./start.sh` (Linux) or relaunch `whisper_type_win.py` (Windows).
 
-## How it works
+### How it works
 
 ```
 SUPER+F9
@@ -80,9 +80,9 @@ SUPER+F9
 
 If `wtype` fails, the daemon falls back to `xdotool`, then `ydotool`, then copies the text to the clipboard.
 
-## Windows (dev)
+### Windows (dev)
 
-No installer yet (see [TICKET-04](docs/tickets/TICKET-04.md)) — this is the developer path, run from source with Python 3.11+.
+No installer needed for this path — this is the developer path, run from source with Python 3.11+ (for the pre-built `.exe`, see [Download](#download-windows)).
 
 ```powershell
 git clone https://github.com/Rev0li/whisper-type
@@ -106,7 +106,7 @@ Notes:
 - Global hotkey capture (`keyboard` module) may need the terminal/script run as Administrator, depending on the target application.
 - `F9` uses `suppress=True` so the keypress doesn't reach the foreground app (e.g. Firefox's reader mode, Excel's recalculation shortcut).
 
-## Project layout
+### Project layout
 
 | File | Role |
 |---|---|
@@ -121,7 +121,7 @@ Notes:
 | `.github/workflows/release-windows.yml` | Builds `whisper-type.exe` with PyInstaller and publishes it to GitHub Releases on tag `v*` |
 | `tests/` | pytest — run with `.venv/bin/python -m pytest tests/ -q` |
 
-## Roadmap — Windows port
+### Roadmap — Windows port
 
 Goal: the same minimal UX on Windows (hotkey → speak → text typed), shipped as a downloadable `.exe` for non-technical friends. No GUI framework — plain Python, packaged with PyInstaller. Work is ticketed in `docs/tickets/`:
 
@@ -131,6 +131,6 @@ Goal: the same minimal UX on Windows (hotkey → speak → text typed), shipped 
 
 Releases aren't code-signed (signing costs money) — unsigned executables trigger Windows SmartScreen and Defender false-positive quarantines, see [Download](#download-windows) for the workarounds.
 
-## History
+### History
 
 An earlier iteration wrapped this daemon in a Tauri desktop app (tray icon, settings UI, installers). It was dropped in favor of the plain daemon (`git log c262401`) — three stacks for a program with no UI wasn't worth it.
