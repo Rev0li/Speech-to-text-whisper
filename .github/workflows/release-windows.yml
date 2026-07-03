@@ -1,0 +1,51 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install deps + PyInstaller
+        run: pip install -r requirements-win.txt pyinstaller
+
+      # --onedir (pas --onefile) : avec ctranslate2 embarqué, --onefile s'auto-extrait
+      # dans un dossier temp à CHAQUE lancement (lent) et déclenche plus de faux
+      # positifs antivirus qu'un dossier de fichiers normal.
+      # --collect-all sur les libs à composants natifs / assets non détectés par
+      # l'analyse statique de PyInstaller (ctranslate2 = binaires, winotify = assets toast).
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onedir `
+            --noconsole `
+            --collect-all faster_whisper `
+            --collect-all ctranslate2 `
+            --collect-all sounddevice `
+            --collect-all winotify `
+            --name whisper-type `
+            whisper_type_win.py
+
+      - name: Zip the build
+        run: Compress-Archive -Path dist/whisper-type -DestinationPath whisper-type-windows.zip
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: whisper-type-windows.zip
