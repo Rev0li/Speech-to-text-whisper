@@ -67,7 +67,8 @@ If `wtype` fails, the daemon falls back to `xdotool`, then `ydotool`, then copie
 
 | File | Role |
 |---|---|
-| `whisper_type.py` | The daemon: recording, transcription, typing, notifications |
+| `whisper_type.py` | Linux entry point: signals, notifications, typing, orchestrates `core.py` |
+| `core.py` | Portable core (no platform dependency): `Recorder` (mic capture → WAV), `Transcriber` (faster-whisper) |
 | `config.py` | Reads/creates `~/.config/whisper-type/config.toml` |
 | `install.sh` | One-shot install (system deps, venv, Hyprland config) |
 | `start.sh` / `stop.sh` | Daemon lifecycle |
