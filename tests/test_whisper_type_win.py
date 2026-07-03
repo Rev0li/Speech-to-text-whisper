@@ -193,3 +193,32 @@ class TestStopAndTranscribe:
             wtw.stop_and_transcribe()
 
         unlink.assert_called_once_with("/tmp/fake.wav")
+
+
+class TestMain:
+    def test_registers_hotkey_and_waits_for_quit(self, wtw, monkeypatch):
+        monkeypatch.setattr(wtw.threading, "Thread", _SyncThread)
+        monkeypatch.setattr(wtw, "load_model", Mock())
+        wtw.recorder = Mock()
+
+        wtw.main()
+
+        wtw.keyboard.add_hotkey.assert_called_once_with(wtw.HOTKEY, wtw.toggle, suppress=True)
+        wtw.keyboard.wait.assert_called_once_with("ctrl+alt+q")
+        wtw.recorder.abort.assert_called_once()
+        wtw.keyboard.unhook_all.assert_called_once()
+
+    def test_notifies_and_exits_cleanly_on_invalid_hotkey(self, wtw, monkeypatch):
+        monkeypatch.setattr(wtw.threading, "Thread", _SyncThread)
+        monkeypatch.setattr(wtw, "load_model", Mock())
+        wtw.recorder = Mock()
+        wtw.keyboard.add_hotkey.side_effect = ValueError("Key 'nope' is not mapped to any known key.")
+        notify = Mock()
+        monkeypatch.setattr(wtw, "notify", notify)
+
+        wtw.main()  # ne doit pas lever malgré le hotkey invalide
+
+        wtw.keyboard.wait.assert_not_called()
+        wtw.recorder.abort.assert_not_called()
+        messages = [c.args[1] if len(c.args) > 1 else "" for c in notify.call_args_list]
+        assert any("invalide" in m.lower() for m in messages)

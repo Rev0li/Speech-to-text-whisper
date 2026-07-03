@@ -123,7 +123,13 @@ def main():
 
     threading.Thread(target=load_model, daemon=True).start()
 
-    keyboard.add_hotkey(HOTKEY, toggle, suppress=True)
+    try:
+        keyboard.add_hotkey(HOTKEY, toggle, suppress=True)
+    except Exception as e:
+        log.error(f"Raccourci '{HOTKEY}' invalide : {e}")
+        notify("whisper-type", f"Raccourci '{HOTKEY}' invalide dans config.toml — voir les logs")
+        return
+
     log.info(f"Raccourci actif : {HOTKEY}  |  Ctrl+Alt+Q pour quitter.")
 
     keyboard.wait("ctrl+alt+q")

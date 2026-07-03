@@ -1,7 +1,7 @@
 ---
 ticket: TICKET-03
 title: Entrée Windows — hotkey global, typing, notifications
-status: tested
+status: refactored
 branch: feat/ticket-03
 updated: 2026-07-03
 ---
@@ -193,11 +193,31 @@ si non traité : un daemon Windows qui semble "ne rien faire" au lancement
 sans aucun log visible (pythonw), pour un utilisateur qui aurait mal
 recopié la syntaxe d'un hotkey personnalisé dans le TOML.
 
-## ♻️ Refactor — <date>
+## ♻️ Refactor — 2026-07-03
 **Changé :**
+- `main()` dans `whisper_type_win.py` : l'appel `keyboard.add_hotkey(HOTKEY, toggle, suppress=True)`
+  est maintenant entouré d'un `try/except`. En cas d'exception (touche
+  invalide dans `config.toml`), on logge l'erreur, on notifie l'utilisateur
+  (« Raccourci '<valeur>' invalide dans config.toml — voir les logs ») et on
+  sort proprement de `main()` (`return`) sans jamais atteindre `keyboard.wait()`.
+- Ajout de `tests/test_whisper_type_win.py::TestMain` (2 tests) : chemin
+  nominal (hotkey enregistré, `keyboard.wait("ctrl+alt+q")` appelé, cleanup
+  `recorder.abort()`/`keyboard.unhook_all()` en sortie) et chemin d'échec
+  (hotkey invalide → notify explicite, pas de crash, pas d'attente engagée).
+
 **Pourquoi :**
-**Risque :**
-**Tests verts avant ET après :**
+- Trouvaille du rôle Test : c'était le seul point d'entrée non protégé de ce
+  fichier, incohérent avec `load_model()` qui suit déjà ce principe (avaler
+  l'exception + notifier plutôt que planter silencieusement, car lancé via
+  `pythonw` sans console — une exception non rattrapée ne laisse absolument
+  aucune trace visible pour l'utilisateur).
+
+**Risque :** faible — changement localisé (un seul appel entouré), suit un
+patron déjà utilisé et testé ailleurs dans le même fichier. Pas de changement
+de comportement sur le chemin nominal.
+
+**Tests verts avant ET après :** oui — 46 tests verts avant, 48 après
+(2 nouveaux dans `TestMain`), `.venv/bin/python -m pytest tests/ -q`.
 
 ## 🚀 Validation — <date>
 **Lancé en dev :**
