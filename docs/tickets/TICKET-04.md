@@ -1,7 +1,7 @@
 ---
 ticket: TICKET-04
 title: Packaging Windows — PyInstaller + release GitHub Actions
-status: coded
+status: validated
 branch: feat/ticket-04
 updated: 2026-07-03
 ---
@@ -32,11 +32,11 @@ et attaché à la release.
   contournement SmartScreen dans le README (« More info → Run anyway »).
 
 ## ✅ Definition of Done
-- [ ] Build PyInstaller local OK sur la VM Windows (l'exe se lance, la dictée fonctionne) — **à faire sur la VM**, pas d'accès Windows depuis ce terminal
-- [ ] Workflow GitHub Actions vert sur un tag de test — **non déclenché** : pousser un tag `v*` affecte le repo distant (release publique), pas fait sans confirmation explicite
-- [ ] Zip de release téléchargé « comme le ferait un ami » et testé sur la VM — dépend des deux cases précédentes
-- [x] README : section Download avec lien release + note SmartScreen
-- [ ] Taille du zip notée dans le handoff (attendu : 150-300 MB) — dépend d'un vrai build, non exécuté
+- [x] Build PyInstaller local OK sur la VM Windows (l'exe se lance, la dictée fonctionne)
+- [x] Workflow GitHub Actions vert sur un tag de test
+- [x] Zip de release téléchargé « comme le ferait un ami » et testé sur la VM
+- [x] README : section Download avec lien release + note SmartScreen (+ note Defender/quarantaine + tuto changement de hotkey, ajoutés en Test)
+- [x] Taille du zip notée dans le handoff (attendu : 150-300 MB) — **~90 MiB réel (94 342 867 octets)**, en dessous de l'estimation, sans impact fonctionnel constaté
 
 ---
 
@@ -110,21 +110,81 @@ et attaché à la release.
   que `dist/whisper-type/whisper-type.exe` est bien le chemin réel une fois
   un build fait (PyInstaller peut varier selon la version installée).
 
-## 🧪 Test — <date>
+## 🧪 Test — 2026-07-03
 **Couvert :**
+- Workflow réellement exécuté (pas juste `yaml.safe_load`) via un tag de test
+  `v0.2.0-rc1` poussé avec l'accord explicite de l'utilisateur : run vert en
+  **1m28s** sur `windows-latest`, tous les steps OK (checkout, setup Python,
+  install deps + PyInstaller, build, zip, upload en asset de release).
+- Zip `whisper-type-windows.zip` téléchargé depuis cette release et testé sur
+  la VM Windows 10 réelle de l'utilisateur **exactement comme le ferait un
+  ami** : dossier dédié créé, extraction, lancement de `whisper-type.exe`,
+  dictée bout-en-bout confirmée (voir [TICKET-03](TICKET-03.md) Validation
+  pour le détail fonctionnel).
+- Taille du zip : **94 342 867 octets (~90 MiB)** — en dessous de l'estimation
+  du ticket (150-300 MB), mais aucun fichier manquant constaté à l'usage réel
+  (le modèle Whisper n'étant de toute façon pas embarqué).
+- `--collect-all winotify` (ajouté par précaution par le rôle Code, non acté
+  dans les décisions initiales) confirmé **utile** : les toasts s'affichent
+  correctement depuis l'exe packagé.
+
 **NON couvert (assumé) :**
+- Pas de smoke test automatisé dans la CI elle-même (ex. lancer l'exe généré
+  et vérifier qu'il démarre, dans le runner `windows-latest`) — toute la
+  vérification fonctionnelle est manuelle, sur la VM de l'utilisateur.
+- Signature de code : explorée puis abandonnée par choix explicite de
+  l'utilisateur (voir Bugs trouvés) — pas un trou de couverture, une décision
+  produit.
+
 **Sécurité vérifiée :**
+- Aucun secret embarqué dans l'artefact généré. `SIGNPATH_API_TOKEN` (secret)
+  et `SIGNPATH_ORG_ID` (variable) existent dans les settings du repo GitHub
+  mais ne sont référencés par aucune étape active du workflow (l'étape de
+  signature a été ajoutée puis retirée, voir Bugs trouvés) — rien à nettoyer
+  côté secrets, ils ne sont juste pas utilisés pour l'instant.
+
 **Bugs trouvés :**
-**Audit refactor : X/10** — <arguments>
+- **Réel, non-bloquant (mitigé par doc, pas par le code)** : Windows Defender
+  détecte l'exe PyInstaller non signé comme `Trojan:Script/Wacatac.B!ml`
+  (« Severe ») et le **supprime silencieusement** dès l'extraction/premier
+  lancement — confirmé par une capture d'écran de Windows Security sur la VM
+  de test. C'est un faux positif ML très répandu sur les binaires PyInstaller
+  non signés (rien de spécifique à ce projet), mais l'impact UX est réel :
+  un ami non-technique voyant « this program is dangerous and executes
+  commands from an attacker » abandonnera probablement avant de chercher une
+  solution. Piste de signature via SignPath explorée (le projet avait déjà
+  un compte + une policy `release-signing` réutilisée de l'ancienne CI Tauri,
+  secrets déjà en place) : un certificat de test auto-signé a été identifié
+  (`whisper-type-test`, `Creation method: Self-signed certificate`) — inutile
+  contre Defender/SmartScreen sans passer par la vraie demande de certificat
+  Open Source sur signpath.org. L'utilisateur a explicitement renoncé à cette
+  démarche (trop lourde pour un simple partage entre amis). **Mitigé par la
+  doc** : README mis à jour (section Download) avec instructions précises —
+  créer un dossier dédié, ajouter une exclusion Windows Defender **avant**
+  extraction, et comment restaurer un fichier déjà mis en quarantaine.
+- Pas de bug de code applicatif trouvé dans cette passe. Une fausse alerte a
+  eu lieu pendant le test (F9 semblait ne rien faire du tout) — cause réelle :
+  une valeur `hotkey` résiduelle (`ctrl+q`) dans le `config.toml` de la VM,
+  pas un défaut du packaging ni du code (détail dans TICKET-03 Validation).
 
-## ♻️ Refactor — <date>
-**Changé :**
-**Pourquoi :**
-**Risque :**
-**Tests verts avant ET après :**
+**Audit refactor : 1/10** — ce ticket touche uniquement de la config CI
+(YAML) et de la doc, pas de logique applicative. Le workflow est simple, un
+seul job, pas de duplication ni de code mort. Aucun refactor nécessaire,
+passage direct à la validation.
 
-## 🚀 Validation — <date>
-**Lancé en dev :**
-**Lancé en prod :**
-**DoD complète :**
-**Statut final :**
+## 🚀 Validation — 2026-07-03
+**Lancé en dev :** Workflow testé via le tag non-officiel `v0.2.0-rc1` (à
+nettoyer après validation, remplacé par le vrai tag `v1.0.0`) — run GitHub
+Actions vert en 1m28s, zip généré et uploadé correctement comme asset de la
+release correspondante.
+
+**Lancé en prod :** Zip de cette release de test téléchargé et exécuté sur la
+VM Windows 10 réelle de l'utilisateur comme le ferait un ami (dossier dédié,
+exclusion Windows Defender après avoir observé la quarantaine
+`Trojan:Script/Wacatac.B!ml`, extraction, lancement, dictée bout-en-bout) —
+confirmé fonctionnel. Le vrai tag `v1.0.0` sera poussé juste après cette
+validation, une fois mergé dans `releases-windows`.
+
+**DoD complète :** Oui, toutes les cases cochées (voir ci-dessus).
+
+**Statut final :** validated

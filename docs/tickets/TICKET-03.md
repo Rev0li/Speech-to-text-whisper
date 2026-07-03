@@ -1,7 +1,7 @@
 ---
 ticket: TICKET-03
 title: Entrée Windows — hotkey global, typing, notifications
-status: refactored
+status: validated
 branch: feat/ticket-03
 updated: 2026-07-03
 ---
@@ -40,10 +40,10 @@ l'enregistrement, le texte transcrit est tapé dans l'input actif. Livrable :
 
 ## ✅ Definition of Done
 - [x] `whisper_type_win.py` + `requirements-win.txt`
-- [ ] Testé sur la VM Windows : dictée dans Notepad ET dans un champ de navigateur, avec accents français — **à faire par l'utilisateur sur sa VM**, aucun accès VM/GUI Windows depuis ce terminal
-- [ ] F9 dans un navigateur toggle l'enregistrement SANS action parasite de l'app (ex. mode lecture Firefox) — idem, à faire sur la VM
-- [ ] Premier lancement (modèle absent) → téléchargement + toast « chargement », pas de crash — logique `notify()`/`load_model()` validée unitairement (mock, voir 🧪 Test) ; téléchargement réel + rendu du toast à vérifier sur la VM
-- [ ] Hotkey pressé pendant le chargement du modèle → toast « réessayez », pas de crash — logique `stop_and_transcribe()` (modèle non chargé) validée unitairement ; rendu réel à vérifier sur la VM
+- [x] Testé sur la VM Windows : dictée dans Notepad ET dans un champ de navigateur, avec accents français
+- [x] F9 dans un navigateur toggle l'enregistrement SANS action parasite de l'app (ex. mode lecture Firefox)
+- [x] Premier lancement (modèle absent) → téléchargement + toast « chargement », pas de crash
+- [x] Hotkey pressé pendant le chargement du modèle → toast « réessayez », pas de crash
 - [x] Tests Linux toujours verts (`.venv/bin/python -m pytest tests/ -q`) + tests unitaires de la clé `hotkey` dans config
 - [x] Doc à jour (README : section dev Windows)
 
@@ -219,8 +219,23 @@ de comportement sur le chemin nominal.
 **Tests verts avant ET après :** oui — 46 tests verts avant, 48 après
 (2 nouveaux dans `TestMain`), `.venv/bin/python -m pytest tests/ -q`.
 
-## 🚀 Validation — <date>
-**Lancé en dev :**
-**Lancé en prod :**
-**DoD complète :**
-**Statut final :**
+## 🚀 Validation — 2026-07-03
+**Lancé en dev :** Testé sur la VM Windows 10 réelle de l'utilisateur (premier
+test réel de ce ticket sur Windows — jusqu'ici seulement des doubles/mocks
+côté Linux) : dictée bout-en-bout confirmée (Notepad + champ de navigateur,
+accents français), F9 toggle sans action parasite dans le navigateur, premier
+lancement avec modèle absent → téléchargement réel + toast « chargement »
+sans crash, hotkey pressé pendant le chargement → toast « réessayez » sans
+crash. Un faux départ de debug a eu lieu (F9 semblait ne rien faire, aucun
+toast, aucune activation micro) : cause réelle **hors code** — `hotkey` dans
+`config.toml` avait été positionné sur une valeur résiduelle d'un test
+antérieur (`ctrl+q`) au lieu du défaut `f9`. Pas un bug de l'app ; document
+comme piste de faux positif pour un futur debug similaire.
+
+**Lancé en prod :** Testé via l'exe packagé livré par TICKET-04 (build
+PyInstaller réel téléchargé depuis la release GitHub, pas lancé depuis les
+sources Python) — même comportement confirmé de bout en bout.
+
+**DoD complète :** Oui, toutes les cases cochées.
+
+**Statut final :** validated

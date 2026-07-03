@@ -19,12 +19,15 @@ Runs 100% offline using [faster-whisper](https://github.com/SYSTRAN/faster-whisp
 
 Pre-built releases are published automatically by GitHub Actions on tagged commits (`v*`) — see [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml).
 
-1. Grab `whisper-type-windows.zip` from the [Releases page](https://github.com/Rev0li/whisper-type/releases).
-2. Extract it anywhere (e.g. `Documents\whisper-type`).
-3. Run `whisper-type.exe`. Windows will likely show **"Windows protected your PC"** (SmartScreen) — the app isn't code-signed (see [Roadmap](#roadmap--windows-port) for why). Click **More info → Run anyway**; this is a one-time warning per version.
-4. Press **F9** to start/stop recording, **Ctrl+Alt+Q** to quit — see [Windows (dev)](#windows-dev) for the full hotkey table and configuration.
+1. Create a dedicated folder for the app, e.g. `Documents\whisper-type` — don't use `Downloads` directly.
+2. **Before extracting**, add a Windows Defender exclusion for that folder: `Windows Security → Virus & threat protection → Manage settings → Exclusions → Add an exclusion → Folder`. This app isn't code-signed (see [Roadmap](#roadmap--windows-port) for why), and Defender's ML heuristics commonly flag unsigned PyInstaller apps as `Trojan:Script/Wacatac.B!ml` and **delete the exe on sight** — a well-known false positive, not an actual detection. The exclusion only prevents future scans; if Defender already quarantined the file, restore it first from `Windows Security → Protection history → (the Wacatac entry) → Actions → Restore`.
+3. Grab `whisper-type-windows.zip` from the [Releases page](https://github.com/Rev0li/whisper-type/releases) and extract it into that excluded folder.
+4. Run `whisper-type.exe`. Windows will likely also show **"Windows protected your PC"** (SmartScreen) — click **More info → Run anyway**; this is a separate, one-time warning per version (unrelated to the Defender exclusion above).
+5. Press **F9** to start/stop recording, **Ctrl+Alt+Q** to quit — see [Windows (dev)](#windows-dev) for the full hotkey table and configuration.
 
 The first launch downloads the Whisper model (~461 MB for `small`) — the "loading" toast covers that wait.
+
+**Changing the hotkey:** the setting lives in a config file created automatically on first launch, at `C:\Users\<YourName>\.config\whisper-type\config.toml`. To edit it: press `Win + R`, type `notepad %USERPROFILE%\.config\whisper-type\config.toml`, press Enter. Change the `hotkey = "f9"` line to any key or combo (e.g. `hotkey = "f8"` or `hotkey = "ctrl+alt+r"`), save, then close and relaunch `whisper-type.exe`.
 
 ---
 
@@ -126,7 +129,7 @@ Goal: the same minimal UX on Windows (hotkey → speak → text typed), shipped 
 2. [TICKET-03](docs/tickets/TICKET-03.md) — Windows entry point (global hotkey, typing, toast notifications)
 3. [TICKET-04](docs/tickets/TICKET-04.md) — PyInstaller packaging + GitHub Actions release
 
-Releases aren't code-signed (signing costs money) — unsigned executables trigger Windows SmartScreen ("Windows protected your PC"), see [Download](#download-windows) for the workaround.
+Releases aren't code-signed (signing costs money) — unsigned executables trigger Windows SmartScreen and Defender false-positive quarantines, see [Download](#download-windows) for the workarounds.
 
 ## History
 
