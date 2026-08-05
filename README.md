@@ -48,6 +48,24 @@ The install script:
   - `exec-once` → the daemon auto-starts with Hyprland
   - `bind = SUPER, F9` → toggle recording
 
+### Install (Linux, no sudo)
+
+For a Debian/Ubuntu machine where you don't have root (e.g. a school/shared
+machine) — X11 + GNOME assumed, no Hyprland:
+
+```bash
+git clone https://github.com/Rev0li/whisper-type
+cd whisper-type
+./install_nosudo.sh
+```
+
+`install_nosudo.sh` never calls `sudo`. It gets the system libs it needs
+(`libportaudio2`, `xdotool`+`libxdo3`) via `apt-get download` (fetches the
+`.deb` without installing it) and extracts them with `dpkg -x` into `.local/`
+— no system install, no root. `start.sh` sources `.local/env.sh` to point
+`PATH`/`LD_LIBRARY_PATH` at them. The hotkey is a native GNOME custom
+keybinding (`gsettings`) instead of a Hyprland bind — F9 alone (no modifier).
+
 ### Usage
 
 | Action | Result |
@@ -114,7 +132,8 @@ Notes:
 | `whisper_type_win.py` | Windows entry point: global hotkey, toast notifications, clipboard typing, orchestrates `core.py` |
 | `core.py` | Portable core (no platform dependency): `Recorder` (mic capture → WAV), `Transcriber` (faster-whisper) |
 | `config.py` | Reads/creates `~/.config/whisper-type/config.toml` |
-| `install.sh` | One-shot install (system deps, venv, Hyprland config) |
+| `install.sh` | One-shot install (system deps, venv, Hyprland config) — needs sudo |
+| `install_nosudo.sh` | One-shot install without sudo (Debian/Ubuntu, GNOME/X11) — `.deb` extraction + `gsettings` hotkey |
 | `start.sh` / `stop.sh` | Daemon lifecycle (Linux) |
 | `toggle.sh` | Sends SIGUSR1 to the daemon (Linux, bound to the hotkey) |
 | `requirements.txt` / `requirements-win.txt` | Linux deps / Windows deps |

@@ -88,8 +88,19 @@ def type_text(text):
             log.warning(f"{cmd[0]} a échoué : {result.stderr.decode()}")
 
     log.warning("Aucun outil de typing disponible — copie dans le clipboard")
-    subprocess.run(["wl-copy", text], input=text.encode(), check=False)
-    notify("whisper-type", "Texte copié dans le clipboard (Ctrl+V)", "edit-paste")
+    for cmd in [
+        ["wl-copy"],
+        ["xclip", "-selection", "clipboard"],
+        ["xsel", "--clipboard", "--input"],
+    ]:
+        if subprocess.run(["which", cmd[0]], capture_output=True).returncode == 0:
+            result = subprocess.run(cmd, input=text.encode(), capture_output=True)
+            if result.returncode == 0:
+                notify("whisper-type", "Texte copié dans le clipboard (Ctrl+V)", "edit-paste")
+                return
+            log.warning(f"{cmd[0]} a échoué : {result.stderr.decode()}")
+
+    log.error("Aucun outil de clipboard disponible non plus.")
 
 
 def toggle_handler(signum, frame):

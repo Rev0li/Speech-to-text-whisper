@@ -1,7 +1,9 @@
 .venv/
+.local/
 __pycache__/
 *.log
 *.pyc
+*.deb
 
 # PyInstaller (TICKET-04)
 build/

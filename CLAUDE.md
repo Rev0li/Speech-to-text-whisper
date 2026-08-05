@@ -16,6 +16,10 @@ Speech-to-text local : hotkey → micro → faster-whisper → texte tapé dans 
   `core.py`, typing presse-papier + Ctrl+V (`pyperclip`), toasts (`winotify`)
 - `config.py` — lit/crée `~/.config/whisper-type/config.toml` (clés : `model`, `language`, `hotkey`)
 - `install.sh` — install one-shot Linux (deps dnf, venv, bind Hyprland **SUPER+F9**)
+- `install_nosudo.sh` — install one-shot Linux **sans sudo** (Debian/Ubuntu, GNOME/X11) :
+  libs système via `apt-get download` + `dpkg -x` extraits dans `.local/` (jamais
+  installées système), `.local/env.sh` sourcé par `start.sh` pour `PATH`/`LD_LIBRARY_PATH`,
+  raccourci **F9** posé via `gsettings` (pas de `hyprland.conf`)
 - `start.sh` / `stop.sh` / `toggle.sh` — cycle de vie du daemon (PID file `/tmp/whisper-type.pid`, Linux uniquement)
 - `.github/workflows/release-windows.yml` — build PyInstaller (`whisper-type.exe`) + release GitHub sur tag `v*`
 - `tests/` — pytest : `.venv/bin/python -m pytest tests/ -q`

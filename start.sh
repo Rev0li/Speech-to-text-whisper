@@ -9,5 +9,11 @@ if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
     exit 0
 fi
 
+# Généré par install_nosudo.sh (libs/binaires extraits sans sudo) — absent
+# si l'install a été faite via install.sh (sudo dnf), pas d'effet dans ce cas.
+if [ -f "$DIR/.local/env.sh" ]; then
+    source "$DIR/.local/env.sh"
+fi
+
 nohup "$DIR/.venv/bin/python3" "$DIR/whisper_type.py" > "$DIR/whisper-type.log" 2>&1 &
 echo "Daemon démarré (PID $!)"
