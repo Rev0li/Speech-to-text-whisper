@@ -63,7 +63,7 @@ app Tauri avec sidecar — c'est le principal frein au vibecoding.
   p.ex. dans une branche/tag — ou à supprimer.)*
 - **Import mort** — `whisper_type.py:19` : `import json` inutilisé.
 - **Shebangs machine-spécifiques** — `whisper_type.py:1` et `config.py:1` codent en
-  dur `/home/rev0li/dev/whisper-type/.venv/bin/python3`. `start.sh` passe déjà par
+  dur `/home/rev0li/dev/outils/whisper-type/.venv/bin/python3`. `start.sh` passe déjà par
   `$DIR/.venv/bin/python3`, donc le shebang absolu est redondant ET casse le clone
   sur une autre machine/un autre chemin.
 - **Commentaire trompeur** — `toggle.sh:3` code en dur un chemin absolu
